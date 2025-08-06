@@ -8,6 +8,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const authenticateToken = require('./authMiddleware'); 
 const usersRoutes = require("./routes/usersRoutes");
+const supportRoutes = require("./routes/supportRoutes");
 
 const app = express();
 const PORT = 5000;
@@ -15,7 +16,10 @@ const PORT = 5000;
 app.use(cors());
 app.use(helmet());
 app.use(express.json({ limit: '10mb' }));
+
+
 app.use("/api/users", usersRoutes);
+app.use("/api/support", supportRoutes);
 
 
 
