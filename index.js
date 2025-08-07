@@ -114,18 +114,24 @@ app.post('/compare-face', async (req, res) => {
 
     const faceRes = await fetch('https://api-us.faceplusplus.com/facepp/v3/compare', {
       method: 'POST',
-      body,
+      body
     });
 
     const faceData = await faceRes.json();
 
+    // 👉 Қосымша логтар (дебаг үшін)
+    console.log("📷 Face++ жауабы:", faceData);
+
+    if (faceData.error_message) {
+      return res.status(400).json({ message: '❌ Face++ қатесі: ' + faceData.error_message });
+    }
+
     if (faceData.confidence && faceData.confidence > 70) {
       await pool.query(
-      "INSERT INTO logins (user_id, method, user_agent) VALUES ($1, $2, $3)",
-      [req.user.id, 'faceid', req.headers['user-agent']]
-    );
+        "INSERT INTO logins (user_id, method, user_agent) VALUES ($1, $2, $3)",
+        [user.id, 'faceid', req.headers['user-agent']]
+      );
       return res.json({ message: '✅ Face ID сәйкестігі расталды' });
-
     } else {
       return res.status(401).json({ message: '❌ Face ID сәйкес келмеді' });
     }
@@ -135,6 +141,7 @@ app.post('/compare-face', async (req, res) => {
     res.status(500).json({ message: '❌ Сервер немесе Face++ қатесі' });
   }
 });
+
 
 
 app.post('/register', async (req, res) => {
