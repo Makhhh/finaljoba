@@ -119,14 +119,19 @@ app.post('/compare-face', async (req, res) => {
 
     const faceData = await faceRes.json();
 
-    // 👉 Қосымша логтар (дебаг үшін)
+    // Дебаг лог
     console.log("📷 Face++ жауабы:", faceData);
 
     if (faceData.error_message) {
       return res.status(400).json({ message: '❌ Face++ қатесі: ' + faceData.error_message });
     }
 
-    if (faceData.confidence && faceData.confidence > 70) {
+    // ✅ ДҰРЫС САЛЫСТЫРУ
+    if (
+      faceData.confidence &&
+      faceData.thresholds &&
+      faceData.confidence > faceData.thresholds["1e-5"]
+    ) {
       await pool.query(
         "INSERT INTO logins (user_id, method, user_agent) VALUES ($1, $2, $3)",
         [user.id, 'faceid', req.headers['user-agent']]
@@ -141,6 +146,7 @@ app.post('/compare-face', async (req, res) => {
     res.status(500).json({ message: '❌ Сервер немесе Face++ қатесі' });
   }
 });
+
 
 
 
