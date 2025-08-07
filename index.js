@@ -106,27 +106,27 @@ app.post('/compare-face', async (req, res) => {
     const cleanSavedImage = user.face_image.replace(/^data:image\/\w+;base64,/, '');
     const cleanCapturedImage = imageData.replace(/^data:image\/\w+;base64,/, '');
 
-    const body = new URLSearchParams();
-    body.append('api_key', process.env.FACEPP_API_KEY);
-    body.append('api_secret', process.env.FACEPP_API_SECRET);
-    body.append('image_base64_1', cleanSavedImage);
-    body.append('image_base64_2', cleanCapturedImage);
+    const formData = new URLSearchParams();
+    formData.append('api_key', process.env.FACEPP_API_KEY);
+    formData.append('api_secret', process.env.FACEPP_API_SECRET);
+    formData.append('image_base64_1', cleanSavedImage);
+    formData.append('image_base64_2', cleanCapturedImage);
 
     const faceRes = await fetch('https://api-us.faceplusplus.com/facepp/v3/compare', {
       method: 'POST',
-      body
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: formData.toString()
     });
 
     const faceData = await faceRes.json();
-
-    // Дебаг лог
     console.log("📷 Face++ жауабы:", faceData);
 
     if (faceData.error_message) {
       return res.status(400).json({ message: '❌ Face++ қатесі: ' + faceData.error_message });
     }
 
-    // ✅ ДҰРЫС САЛЫСТЫРУ
     if (
       faceData.confidence &&
       faceData.thresholds &&
