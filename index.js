@@ -13,7 +13,11 @@ const supportRoutes = require("./routes/supportRoutes");
 const app = express();
 const PORT = 5000;
 
-app.use(cors());
+const corsOptions = {
+  origin: ['https://finaljoba.onrender.com'], 
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(helmet());
 app.use(express.json({ limit: '10mb' }));
 
