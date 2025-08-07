@@ -14,10 +14,23 @@ const app = express();
 const PORT = 5000;
 
 const corsOptions = {
-  origin: ['https://finaljoba.onrender.com'], 
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'https://finaljobafront.netlify.app',
+      'http://localhost:5173' 
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 };
 app.use(cors(corsOptions));
+
+
+
 app.use(helmet());
 app.use(express.json({ limit: '10mb' }));
 
