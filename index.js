@@ -93,7 +93,6 @@ app.post('/compare-face', async (req, res) => {
 
   try {
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-
     if (result.rows.length === 0) {
       return res.status(404).json({ message: '❌ Қолданушы табылмады' });
     }
@@ -114,9 +113,7 @@ app.post('/compare-face', async (req, res) => {
 
     const faceRes = await fetch('https://api-us.faceplusplus.com/facepp/v3/compare', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formData.toString()
     });
 
@@ -126,19 +123,39 @@ app.post('/compare-face', async (req, res) => {
     if (faceData.error_message) {
       return res.status(400).json({ message: '❌ Face++ қатесі: ' + faceData.error_message });
     }
+    if (!faceData.confidence || !faceData.thresholds) {
+      return res.status(400).json({ message: '❌ Бетті анықтау сәтсіз' });
+    }
 
-    if (
-      faceData.confidence &&
-      faceData.thresholds &&
-      faceData.confidence > faceData.thresholds["1e-5"]
-    ) {
+    if (faceData.confidence > faceData.thresholds["1e-5"]) {
       await pool.query(
         "INSERT INTO logins (user_id, method, user_agent) VALUES ($1, $2, $3)",
-        [user.id, 'faceid', req.headers['user-agent']]
+        [user.id, 'faceid', req.headers['user-agent'] || 'unknown']
       );
-      return res.json({ message: '✅ Face ID сәйкестігі расталды' });
+
+      const token = jwt.sign(
+        { id: user.id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      return res.json({
+        success: true,
+        message: '✅ Face ID сәйкестігі расталды',
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          face_image: user.face_image
+        }
+      });
     } else {
-      return res.status(401).json({ message: '❌ Face ID сәйкес келмеді' });
+      return res.status(403).json({
+        success: false,
+        message: '❌ Face ID сәйкес келмеді',
+        confidence: faceData.confidence
+      });
     }
 
   } catch (err) {
@@ -146,6 +163,7 @@ app.post('/compare-face', async (req, res) => {
     res.status(500).json({ message: '❌ Сервер немесе Face++ қатесі' });
   }
 });
+
 
 
 
